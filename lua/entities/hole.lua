@@ -53,9 +53,6 @@ function ENT:TryLoadResource(resourceType, resourceAmount)
     local angles = self:GetAngles()
     local direction = angles:Forward()
 
-    print(origin)
-    print(direction)
-
     local result = util.QuickTrace(origin, direction, self)
     local amountLoaded = 0
 
