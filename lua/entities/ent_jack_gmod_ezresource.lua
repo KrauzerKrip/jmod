@@ -66,6 +66,7 @@ if SERVER then
 	function ENT:Initialize()
 		if self.Models then
 			self:SetModal(table.Random(self.Models))
+			
 		else
 			self:SetModel(self.Model)
 		end
@@ -145,7 +146,7 @@ if SERVER then
 				end
 			end
 
-			if data.HitEntity.EZconsumes and table.HasValue(data.HitEntity.EZconsumes, self.EZsupplies) and (self.NextLoad < Time) and self:IsPlayerHolding() then
+			if data.HitEntity.EZconsumes and table.HasValue(data.HitEntity.EZconsumes, self.EZsupplies) and (self.NextLoad < Time) and (self:IsPlayerHolding() or data.HitEntity.IsFunnel) then
 				if self:GetResource() <= 0 then
 					self:Remove()
 
