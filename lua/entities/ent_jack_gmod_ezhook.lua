@@ -60,7 +60,7 @@ if SERVER then
 				local Ent = data.HitEntity
 				if (IsValid(Ent) and not(Ent:IsPlayer() or Ent:IsNPC() or Ent:IsNextBot() or Ent == self.EZconnector)) then
 					timer.Simple(0, function()
-						if self.EZhookType == "Plugin" then
+						if self.EZhookType == "Plugin" or self.EZhookType == "ConveyorIn" or self.EZhookType == "ConveyorOut" then
 							local ConnectionRange = self.EZconnector.MaxConnectionRange or 1000
 							local PlayerHolding = nil
 							local NearbyPlayers = ents.FindInSphere(self:GetPos(), 100)
@@ -75,7 +75,14 @@ if SERVER then
 								local DistanceBetween = (self.EZconnector:GetPos() - Ent:LocalToWorld(PluginPos)):Length()
 								ConnectionRange = math.min(ConnectionRange, DistanceBetween + 10)
 							end
-							local Connected = JMod.CreateConnection(self.EZconnector, Ent, JMod.EZ_RESOURCE_TYPES.POWER, Ent:WorldToLocal(data.HitPos), ConnectionRange)
+							local Connected = false
+							if self.EZhookType == "Plugin" then
+								Connected = JMod.CreateConnection(self.EZconnector, Ent, JMod.EZ_RESOURCE_TYPES.POWER, Ent:WorldToLocal(data.HitPos), ConnectionRange)
+							elseif self.EZhookType == "ConveyorIn" then
+								Connected = JMod.CreateConveyorConnection(self.EZconnector, Ent, Ent:WorldToLocal(data.HitPos), ConnectionRange, nil, "Input")
+							elseif self.EZhookType == "ConveyorOut" then
+								Connected = JMod.CreateConveyorConnection(self.EZconnector, Ent, Ent:WorldToLocal(data.HitPos), ConnectionRange, nil, "Output")
+							end
 							if Connected then SafeRemoveEntity(self) end
 						else
 							self.NextStick = Time + 1

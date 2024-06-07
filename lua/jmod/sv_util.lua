@@ -1605,6 +1605,55 @@ function JMod.CreateConnection(machine, ent, resType, plugPos, dist, cable)
 	return true
 end
 
+function JMod.CreateConveyorConnection(connector, ent, plugPos, dist, cable, typ)
+	dist = dist or 1000
+	if not (IsValid(connector) and IsValid(ent) ) then return false end
+	if not IsValid(ent) or (ent == connector) then return false end
+	--if ent.IsJackyEZcrate and ent.GetResourceType and not(ent:GetResourceType() == resType or ent:GetResourceType() == "generic") then return false end
+
+	if not ent.IsAdapter then
+		return false;
+	end 
+
+	if not JMod.ShouldAllowControl(ent, JMod.GetEZowner(connector), true) then return false end
+	local PluginPos = ent.EZpowerSocket or plugPos or ent:OBBCenter()
+	if not IsValid(cable) then
+		local DistanceBetween = (connector:GetPos() - ent:LocalToWorld(PluginPos)):Length()
+		if (DistanceBetween > dist) then return false end
+	end
+	--
+	connector.EZconnections = connector.EZconnections or {}
+	local AlreadyConnected = false
+	local EntID = ent:EntIndex()
+	for entID, cable in pairs(connector.EZconnections) do
+		if entID == EntID then
+			AlreadyConnected = true
+
+			break
+		end
+	end
+	if AlreadyConnected then return false end
+	
+	ent.EZconnections = ent.EZconnections or {}
+	local MachineIndex = connector:EntIndex()
+	for entID, cable in pairs(ent.EZconnections) do
+		if (EntID == MachineIndex) then
+			if IsValid(cable) then
+				cable:Remove()
+			end
+			ent.EZconnections[entID] = nil
+		end
+	end
+	--
+	if not IsValid(cable) then
+		cable = constraint.Rope(connector, ent, 0, 0, connector.EZpowerSocket or Vector(0, 0, 0), PluginPos, dist + 20, 10, 100, 2, "cable/cable2")
+	end
+	ent.EZconnections[MachineIndex] = {cable, typ}
+	connector.EZconnections[EntID] = {cable, typ}
+
+	return true
+end
+
 function JMod.RemoveConnection(machine, connection)
 	if not IsValid(machine) then return end
 	-- Check if connection is a entity first
@@ -1621,6 +1670,24 @@ function JMod.RemoveConnection(machine, connection)
 	end
 	machine.EZconnections[connection] = nil
 end
+
+function JMod.RemoveConveyorConnection(machine, connection)
+	if not IsValid(machine) then return end
+	-- Check if connection is a entity first
+	if type(connection) == "Entity" and IsValid(connection) then
+		-- Check if it is connected
+		connection = connection:EntIndex()
+		if type(connection) ~= "number" then return end
+	end
+	if not(machine.EZconnections[connection]) then return end
+	local ConnectedEnt = Entity(connection)
+	local Cable = machine.EZconnections[connection][1]
+	if IsValid(Cable) then
+		Cable:Remove()
+	end
+	machine.EZconnections[connection] = nil
+end
+
 
 hook.Add("PhysgunPickup", "EZPhysgunBlock", function(ply, ent)
 	if ent.block_pickup then
