@@ -45,22 +45,28 @@ end
 if CLIENT then
 	function ENT:Draw()
 		self:DrawModel()
+
+        local origin = self:GetPos()
+        local angles = self:GetAngles()
+        local direction = -angles:Up()
+        render.DrawLine( origin, origin + direction * 10000, Color( 255, 255, 255 ), true)
 	end
 end
 
 function ENT:TryLoadResource(resourceType, resourceAmount) 
     local origin = self:GetPos()
     local angles = self:GetAngles()
-    local direction = angles:Forward()
+    local direction = -angles:Up() * 10000
 
-    local result = util.QuickTrace(origin, direction, self)
-    local amountLoaded = 0
+    amountLoaded = 0
+
+    result = util.QuickTrace(origin, direction, self)
 
     if (IsValid(result.Entity)) then
         if (result.Entity.EZconsumes and table.HasValue(result.Entity.EZconsumes, resourceType)) then
             amountLoaded = result.Entity:TryLoadResource(resourceType, resourceAmount)
         end
     end
-
+    
     return amountLoaded
 end
