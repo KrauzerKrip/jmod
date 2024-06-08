@@ -84,6 +84,11 @@ local function spawnPlugs(self, ply, spawnPos)
     PlugOutput.Chain = RopeOutput
 end
 
+function ENT:CustomSetupDataTables() 
+    self:NetworkVar("String", "CurrentResourceType")
+    self:NetworkVar("Int", "CurrentResourceAmount")
+end
+
 if SERVER then
 	function ENT:SpawnFunction(ply, tr)
 		local SpawnPos = tr.HitPos + tr.HitNormal * 20
@@ -181,16 +186,50 @@ if SERVER then
             amountLoaded = 0
 
             if Type == "Output" and IsValid(Ent) then
+                self:SetCurrentResourceType(resourceType)
                 amountLoaded = Ent:TryLoadResource(resourceType, resourceAmount)
+                self:SetCurrentResourceAmount(amountLoaded)
                 return amountLoaded
             end
         end 
+        return 0
     end
 end
 
 if CLIENT then
 	function ENT:Draw()
+        local SelfPos, SelfAng, State = self:GetPos(), self:GetAngles(), self:GetState()
+		local Up, Right, Forward = SelfAng:Up(), SelfAng:Right(), SelfAng:Forward()
+		---
+		local BasePos = SelfPos
+		local Obscured = util.TraceLine({start = EyePos(), endpos = BasePos, filter = {LocalPlayer(), self}, mask = MASK_OPAQUE}).Hit
+		local Closeness = LocalPlayer():GetFOV() * (EyePos():Distance(SelfPos))
+		local DetailDraw = Closeness < 120000 -- cutoff point is 400 units when the fov is 90 degrees
+		---
+		--if((not(DetailDraw)) and (Obscured))then return end -- if player is far and sentry is obscured, draw nothing
+		if(Obscured)then DetailDraw = false end -- if obscured, at least disable details
+		if(State == STATE_BROKEN)then DetailDraw = false end -- look incomplete to indicate damage, save on gpu comp too
+		---
 		self:DrawModel()
+		---
+        if DetailDraw then
+			if Closeness < 20000 and State == JMod.EZ_STATE_ON then
+				local DisplayAng = SelfAng:GetCopy()
+				DisplayAng:RotateAroundAxis(DisplayAng:Right(), -90)
+				DisplayAng:RotateAroundAxis(DisplayAng:Up(), 90)
+				local Opacity = math.random(50, 150)
+
+                typ = self:GetCurrentResourceType()
+                amt = self:GetCurrentResourceAmount()
+
+				local R, G, B = JMod.GoodBadColor(amt / 1000)
+
+				cam.Start3D2D(SelfPos + Forward * 13 + Up * 13, DisplayAng, .08)
+				draw.SimpleTextOutlined(typ, "JMod-Display", 0, 0, Color(200, 255, 255, Opacity), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 3, Color(0, 0, 0, Opacity))
+				draw.SimpleTextOutlined(tostring(math.Round(amt)) .. "/" .. tostring(math.Round(self.MaxResourceAmount)), "JMod-Display", 0, 30, Color(R, G, B, Opacity), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 3, Color(0, 0, 0, Opacity))
+				cam.End3D2D()
+			end
+		end
 	end
 end
 
