@@ -1615,6 +1615,22 @@ function JMod.CreateConveyorConnection(connector, ent, plugPos, dist, cable, typ
 		return false;
 	end 
 
+	-- check for existing connection
+	if ent.EZconnections then 
+		connectionNumber = 0
+		for _, _ in pairs(ent.EZconnections) do
+			connectionNumber = connectionNumber + 1
+		end
+
+		if (connectionNumber > 0) then 
+			return false 
+		end
+	end
+
+	if typ == JMod.EZ_RESOURCE_TYPES.POWER or typ == JMod.EZ_RESOURCE_TYPES.HVPOWER then 
+		return 0
+	end
+
 	if not JMod.ShouldAllowControl(ent, JMod.GetEZowner(connector), true) then return false end
 	local PluginPos = ent.EZpowerSocket or plugPos or ent:OBBCenter()
 	if not IsValid(cable) then

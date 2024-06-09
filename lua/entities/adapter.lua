@@ -11,10 +11,13 @@ ENT.Model = "models/props_lab/powerbox02d.mdl"
 ENT.Mass = 150
 ENT.EZconsumes={}
 ENT.IsAdapter = true
+ENT.MaxResourceAmount = 10
 
 function ENT:PutEveryResourceIntoTable() 
     for _, v in pairs(JMod.EZ_RESOURCE_TYPES) do
-        table.insert(self.EZconsumes, v)
+        if v != JMod.EZ_RESOURCE_TYPES.POWER and v != JMod.EZ_RESOURCE_TYPES.HVPOWER then 
+            table.insert(self.EZconsumes, v)
+        end
     end
 end
 
@@ -85,6 +88,10 @@ if SERVER then
 
     function ENT:TryLoadResource(resoureType, resourceAmount)
         if self:GetResourceType() ~= resourceType and self:GetResourceAmount() > 0 then
+            return 0
+        end
+
+        if self:GetResourceAmount() >= self.MaxResourceAmount then
             return 0
         end
 

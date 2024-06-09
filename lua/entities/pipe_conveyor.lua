@@ -173,6 +173,10 @@ if SERVER then
 			return 0
 		end
 
+        if resourceType == JMod.EZ_RESOURCE_TYPES.POWER or resourceType == JMod.EZ_RESOURCE_TYPES.HVPOWER then 
+            return 0
+        end
+
         if resourceAmount > self.MaxResourceAmount then
             resourceAmount = self.MaxResourceAmount
         end
