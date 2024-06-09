@@ -57,6 +57,10 @@ if SERVER then
                     local Ent, CableAndType = Entity(entID), cableAndType
                     local Cable, Type = CableAndType[1], CableAndType[2]
 
+                    if not Ent.TryLoadResource then 
+                        self.EZconnections[entID] = nil
+                    end
+
                     if not Type then error("ADAPTER: connection TYPE is nil") end
                 
                     -- load into conveyor
