@@ -15,7 +15,8 @@ ENT.MaxConnectionRange = 10000
 ENT.Durability = 100
 ENT.MaxDurability = 100
 ENT.EZconnections = {}
-ENT.MaxResourceAmount = 10
+ENT.EZupgradable = true
+ENT.BackupRecipe = {[JMod.EZ_RESOURCE_TYPES.BASICPARTS] = 100, [JMod.EZ_RESOURCE_TYPES.PRECISIONPARTS] = 100}
 
 ENT.StaticPerfSpecs={ 
 	MaxDurability = 100,
@@ -87,6 +88,7 @@ end
 function ENT:CustomSetupDataTables() 
     self:NetworkVar("String", "CurrentResourceType")
     self:NetworkVar("Int", "CurrentResourceAmount")
+    self:NetworkVar("Int", "MaxResourceFlow")
 end
 
 if SERVER then
@@ -97,6 +99,9 @@ if SERVER then
 		JMod.SetEZowner(Ent, ply)
 		Ent:Spawn()
 		Ent:Activate()
+        Ent:SetMaxResourceFlow(10)
+
+        putEveryResourceIntoTable(Ent)
 
 		-- JMod.Hint(JMod.GetEZowner(ent), "ent_jack_gmod_ezpowerbank")
 		return Ent
@@ -106,25 +111,8 @@ if SERVER then
         local Time, State = CurTime(), self:GetState()
 
         self:NextThink(Time + 1)
+
 		return true
-    end
-
-    function ENT:Initialize()
-        self:SetModel(self.Model)
-        self:SetModelScale(1)
-        self:PhysicsInit( SOLID_VPHYSICS ) -- Initializes physics for the entity, making it solid and interactable.
-        self:SetMoveType( MOVETYPE_VPHYSICS ) -- Sets how the entity moves, using physics.
-        self:SetSolid( SOLID_VPHYSICS ) -- Makes the entity solid, allowing for collisions.
-
-        self:DrawShadow(false)
-		self:SetUseType(SIMPLE_USE)
-
-        local phys = self:GetPhysicsObject() -- Retrieves the physics object of the entity.
-        if phys:IsValid() then -- Checks if the physics object is valid.
-            phys:Wake() -- Activates the physics object, making the entity subject to physics (gravity, collisions, etc.).
-        end
-        
-        putEveryResourceIntoTable(self)
     end
 
     function ENT:Use(activator)
@@ -154,6 +142,9 @@ if SERVER then
 		if IsValid(ply) then
 			self.EZstayOn = true
 		end
+        
+        MaxResourceFlow = 10 * 2^(self:GetGrade() - 1)
+        self:SetMaxResourceFlow(MaxResourceFlow)
 
         self:EmitSound("buttons/button24.wav", 75, 100)
 	end
@@ -177,8 +168,10 @@ if SERVER then
             return 0
         end
 
-        if resourceAmount > self.MaxResourceAmount then
-            resourceAmount = self.MaxResourceAmount
+        MaxResourceFlow = self:GetMaxResourceFlow()
+
+        if resourceAmount > MaxResourceFlow then
+            resourceAmount = MaxResourceFlow
         end
         
         for entID, cableAndType in pairs(self.EZconnections) do
@@ -230,7 +223,7 @@ if CLIENT then
 
 				cam.Start3D2D(SelfPos + Forward * 13 + Up * 13, DisplayAng, .08)
 				draw.SimpleTextOutlined(typ, "JMod-Display", 0, 0, Color(200, 255, 255, Opacity), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 3, Color(0, 0, 0, Opacity))
-				draw.SimpleTextOutlined(tostring(math.Round(amt)) .. "/" .. tostring(math.Round(self.MaxResourceAmount)), "JMod-Display", 0, 30, Color(R, G, B, Opacity), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 3, Color(0, 0, 0, Opacity))
+				draw.SimpleTextOutlined(tostring(math.Round(amt)) .. "/" .. tostring(math.Round(self:GetMaxResourceFlow())), "JMod-Display", 0, 30, Color(R, G, B, Opacity), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 3, Color(0, 0, 0, Opacity))
 				cam.End3D2D()
 			end
 		end
